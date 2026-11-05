@@ -3,8 +3,7 @@ on:
   push
 jobs:
   First_Workflow:
-      runs-on: Windows-latest
-     Steps:
-       - name: first workflow job
-        run:
-          echo "Welcome to github actions !!!"
+    runs-on: Windows-latest
+    steps:
+      - name: first workflow job
+        run: echo "Welcome to github actions !!!"
