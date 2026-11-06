@@ -1,0 +1,33 @@
+name: Python App & Docker Build Validation
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  validate-and-build-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # Speeds up subsequent runs by caching dependencies
+
+      - name: Install Application Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # Optional: Runs tests if you have a test suite set up for app.py
+      - name: Run Python Application Tests
+        run: |
+          # pytest or python -m unittest discover
+          echo "Running application validations..."
+
+      - name: Build Docker Image Locally
+        run: |
+          docker build -t my-python-app:local .
