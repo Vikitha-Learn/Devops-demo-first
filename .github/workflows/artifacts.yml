@@ -43,6 +43,7 @@ jobs:
         with:
           name: docker-image-artifact
           path: image.tar
+          if-no-files-found: error
           retention-days: 1
 
   push-image-job:
