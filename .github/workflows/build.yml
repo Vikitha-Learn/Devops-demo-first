@@ -1,15 +1,10 @@
 name: Build and Push to Docker Hub
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
-  docker:
+  Build-push-job:
     runs-on: ubuntu-latest
 
     steps:
