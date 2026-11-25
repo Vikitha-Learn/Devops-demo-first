@@ -1,0 +1,48 @@
+name: Called Reusable Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Target deployment environment'
+        required: true
+        type: string
+      debug-mode:
+        description: 'Enable extra logging'
+        required: false
+        type: boolean
+        default: false
+    # 2. Define secrets the caller can pass in
+    secrets:
+      deploy-token:
+        required: false
+    # 3. Define outputs to send back to the caller
+    outputs:
+      deployment-status:
+        description: 'Status message from the called workflow'
+        value: ${{ jobs.deploy-job.outputs.status }}
+
+jobs:
+  deploy-job:
+    runs-on: ubuntu-latest
+    # Map step outputs to job outputs so the workflow can export them
+    outputs:
+      status: ${{ steps.run-deploy.outputs.result }}
+    steps:
+      - name: Print inputs and simulate work
+        id: run-deploy
+        run: |
+          echo "Deploying to: ${{ inputs.environment }}"
+          echo "Debug mode is: ${{ inputs.debug-mode }}"
+          
+          if [ -n "${{ secrets.deploy-token }}" ]; then
+            echo "Secret token was provided!"
+          else
+            echo "No secret token provided."
+          fi
+
+          # Set an output variable
+          echo "result=Success-to-${{ inputs.environment }}" >> $GITHUB_OUTPUT
+
+          # Set an output variable
+          echo "result=Success-to-${{ inputs.environment }}" >> $GITHUB_OUTPUT
