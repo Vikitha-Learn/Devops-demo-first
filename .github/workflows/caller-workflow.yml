@@ -1,0 +1,34 @@
+name: Caller Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      target-env:
+        description: 'Choose environment to test'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+ 
+  call-reusable:
+    # Reference the local file path (must start with ./)
+    uses: ./.github/workflows/called-workflow.yml
+    with:
+      environment: ${{ inputs.target-env }}
+      debug-mode: true
+    # Pass secrets explicitly (or use 'secrets: inherit' for all repo secrets)
+    secrets:
+      deploy-token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Job 2: Read the output returned by the called workflow
+  verify-output:
+    needs: call-reusable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check returned status
+        run: |
+          echo "The called workflow returned: ${{ needs.call-reusable.outputs.deployment-status }}"
