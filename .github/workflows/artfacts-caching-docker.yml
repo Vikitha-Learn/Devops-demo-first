@@ -67,7 +67,7 @@ jobs:
         run: |
           docker load -i my-app.tar
 
-            - name: Run Flask smoke test
+      - name: Run Flask smoke test
         shell: bash
         run: |
           set -euo pipefail
