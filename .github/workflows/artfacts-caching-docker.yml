@@ -1,0 +1,132 @@
+name: Docker Artifact, Cache, and Smoke Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # JOB 1: Build the Docker image and upload it.
+  build-container-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Build
+        uses: docker/setup-build-action@v4
+
+      - name: Build Docker image with cache
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          push: false
+          tags: my-app:latest
+
+          # Restore cached build layers from earlier runs.
+          cache-from: type=gha,scope=my-app
+
+          # Save build layers for future runs.
+          cache-to: type=gha,mode=max,scope=my-app
+
+      - name: Check Docker image
+        run: |
+          docker images my-app:latest
+
+      - name: Save Docker image as a tar file
+        run: |
+          docker save practice-app:latest -o my-app.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: docker-image
+          path: my-app.tar
+          retention-days: 1
+
+  # JOB 2: Download the image, test it, and export logs.
+  run-container-job:
+    needs: build-container-job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prepare log directory
+        run: |
+          mkdir -p logs
+          echo "Smoke test job started." > logs/smoke-test.log
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: docker-image
+
+      - name: Load Docker image
+        run: |
+          docker load -i my-app.tar
+
+      - name: Run smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "Starting container..."
+
+            # Keep the container after it exits so we can collect its logs.
+            docker run -d \
+              --name practice-smoke \
+              my-app:latest
+
+            echo "Waiting for the container to finish..."
+            EXIT_CODE=$(timeout 30s docker wait practice-smoke)
+
+            echo "Container exit code: $EXIT_CODE"
+
+            # Capture container stdout and stderr.
+            docker logs practice-smoke > logs/container.log 2>&1
+
+            echo "Container output:"
+            cat logs/container.log
+
+            # Smoke test 1: successful exit.
+            if [ "$EXIT_CODE" != "0" ]; then
+              echo "FAIL: Container exited with an error."
+              exit 1
+            fi
+
+            # Smoke test 2: expected application output.
+            if ! grep -Fxq "Hello from my Docker container!" logs/container.log; then
+              echo "FAIL: Expected message was not found."
+              exit 1
+            fi
+
+            echo "PASS: Smoke test completed successfully."
+          } 2>&1 | tee -a logs/smoke-test.log
+
+      - name: Collect container logs
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          mkdir -p logs
+
+          if docker container inspect practice-smoke > /dev/null 2>&1; then
+            docker logs practice-smoke > logs/container.log 2>&1 || true
+          else
+            echo "Container was not created." > logs/container.log
+          fi
+
+      - name: Upload smoke-test logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: docker-smoke-test-logs
+          path: logs/
+          retention-days: 2
+
+      - name: Remove test container
+        if: ${{ always() }}
+        run: |
+          docker rm -f practice-smoke || true
