@@ -82,7 +82,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           SELECTED_ENV: ${{ inputs.environment }}
-        run: 
+        run: | 
           echo "Selected environment: $SELECTED_ENV"
 
       - name: Optional manual step
@@ -104,7 +104,7 @@ jobs:
       - name: Read the step output
         env:
           RESULT: ${{ steps.create_output.outputs.result }}
-        run: 
+        run: |
          echo " Step output: $RESULT"
 
       - name: Run if a previous step fails
@@ -120,4 +120,5 @@ jobs:
       - name: Read output from another job
         env:
           RESULT: ${{ needs.practice-level-job.outputs.result }}
-        run: echo "Job output: $RESULT"
+        run: |
+          echo "Job output: $RESULT"
