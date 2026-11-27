@@ -1,0 +1,64 @@
+name: Functions Practicedemo
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  practice-functions-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Practice string functions
+        env:
+          CONTAINS_RESULT: ${{ contains('GitHub Actions', 'Actions') }}
+          STARTS_RESULT: ${{ startsWith('feature/login', 'feature/') }}
+          ENDS_RESULT: ${{ endsWith('app.js', '.js') }}
+        run: |
+          echo "contains result: $CONTAINS_RESULT"
+          echo "startsWith result: $STARTS_RESULT"
+          echo "endsWith result: $ENDS_RESULT"
+
+      - name: Practice format and join
+        env:
+          MESSAGE: ${{ format('Hello {0}, welcome to {1}', 'Vicky', 'GitHub Actions') }}
+          ENVIRONMENTS: ${{ join(fromJSON('["dev", "staging", "prod" , "qa"]'), ', ') }}
+        run: |
+          echo "Formatted message: $MESSAGE"
+          echo "Joined values: $ENVIRONMENTS"
+
+      - name: Practice JSON conversion
+        env:
+          JOB_JSON: ${{ toJSON(job) }}
+          NUMBER_CHECK: ${{ fromJSON('10') > 5 }}
+        run: |
+          echo "Job context as JSON:"
+          echo "$JOB_JSON"
+          echo "Is 10 greater than 5? $NUMBER_CHECK"
+
+      - name: Practice case
+        env:
+          DEPLOY_ENV: ${{ case(github.ref == 'refs/heads/main', 'production', 'development') }}
+        run: |
+          echo "Selected environment: $DEPLOY_ENV"
+
+      - name: Run only for selected events
+        if: ${{ contains(fromJSON('["push", "workflow_dispatch"]'), github.event_name) }}
+        run: |
+          echo "This is a push or manual run."
+
+      - name: Run after successful steps
+        if: ${{ success() }}
+        run: |
+          echo "Previous steps succeeded."
+
+      - name: Run if a previous step fails
+        if: ${{ failure() }}
+        run: |
+          echo "A previous step failed."
+
+      - name: Run unless the workflow was cancelled
+        if: ${{ !cancelled() }}
+        run: |
+          echo "The workflow was not cancelled."
