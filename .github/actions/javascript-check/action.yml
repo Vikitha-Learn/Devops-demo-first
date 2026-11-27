@@ -1,0 +1,6 @@
+name: JavaScript Project Check
+description: Check whether app.py exists using JavaScript
+
+runs:
+  using: node24
+  main: index.js
