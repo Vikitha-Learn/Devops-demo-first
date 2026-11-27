@@ -1,0 +1,21 @@
+name: Flask Project Check
+description: Check the files needed for the Flask application
+
+runs:
+  using: composite
+
+  steps:
+    - name: Check project files
+      shell: bash
+      run: |
+        echo "Checking Flask project files..."
+
+        test -f app.py
+        test -f requirements.txt
+
+        echo "PASS: Required files exist."
+
+    - name: Display Python version
+      shell: bash
+      run: |
+        python --version
