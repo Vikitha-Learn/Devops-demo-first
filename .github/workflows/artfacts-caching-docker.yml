@@ -67,43 +67,50 @@ jobs:
         run: |
           docker load -i my-app.tar
 
-      - name: Run smoke test
+            - name: Run Flask smoke test
         shell: bash
         run: |
           set -euo pipefail
 
           {
-            echo "Starting container..."
+            echo "Starting Flask container..."
 
-            # Keep the container after it exits so we can collect its logs.
             docker run -d \
               --name practice-smoke \
-              my-app:latest
+              -p 127.0.0.1:5000:5000 \
+              practice-app:latest
 
-            echo "Waiting for the container to finish..."
-            EXIT_CODE=$(timeout 30s docker wait practice-smoke)
+            echo "Waiting for the application to respond..."
 
-            echo "Container exit code: $EXIT_CODE"
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent --show-error \
+                http://127.0.0.1:5000/ \
+                -o logs/response.txt; then
 
-            # Capture container stdout and stderr.
-            docker logs practice-smoke > logs/container.log 2>&1
+                echo "Response received:"
+                cat logs/response.txt
+                echo
 
-            echo "Container output:"
-            cat logs/container.log
+                if [ "$(cat logs/response.txt)" != "Hello, World!" ]; then
+                  echo "FAIL: Unexpected response body."
+                  exit 1
+                fi
 
-            # Smoke test 1: successful exit.
-            if [ "$EXIT_CODE" != "0" ]; then
-              echo "FAIL: Container exited with an error."
-              exit 1
-            fi
+                echo "PASS: Flask smoke test succeeded."
+                exit 0
+              fi
 
-            # Smoke test 2: expected application output.
-            if ! grep -Fxq "Hello from my Docker container!" logs/container.log; then
-              echo "FAIL: Expected message was not found."
-              exit 1
-            fi
+              if [ "$(docker inspect -f '{{.State.Running}}' practice-smoke)" != "true" ]; then
+                echo "FAIL: Container stopped before responding."
+                exit 1
+              fi
 
-            echo "PASS: Smoke test completed successfully."
+              echo "Attempt $attempt: App is not ready yet."
+              sleep 1
+            done
+
+            echo "FAIL: Application did not respond within 30 seconds."
+            exit 1
           } 2>&1 | tee -a logs/smoke-test.log
 
       - name: Collect container logs
