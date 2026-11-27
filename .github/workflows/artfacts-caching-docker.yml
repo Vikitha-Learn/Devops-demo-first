@@ -78,7 +78,7 @@ jobs:
             docker run -d \
               --name practice-smoke \
               -p 127.0.0.1:5000:5000 \
-              practice-app:latest
+              my-app:latest
 
             echo "Waiting for the application to respond..."
 
