@@ -1,0 +1,30 @@
+name: Concurrency Practice session
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  practice-concurency-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show run information
+        env:
+          BRANCH_REF: ${{ github.ref }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          echo "Branch: $BRANCH_REF"
+          echo "Run number: $RUN_NUMBER"
+
+      - name: Simulate a long-running job
+        run: |
+          echo "Starting a 60-second task..."
+          sleep 60
+          echo "Task completed."
